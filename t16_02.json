@@ -1,0 +1,14 @@
+{
+    "name" : "Max",
+    "value": 100,
+    "children" : [
+        {"name" : "shin", "value": 100},
+        {"name" : "min", "value": 125},
+        {"name" : "jung", "value": 50},
+        {"name" : "hong", "value": 78},
+        {"name" : "bae", "value": 25},
+        {"name" : "park", "value": 210},
+        {"name" : "lee", "value": 140},
+        {"name" : "jin", "value": 90}
+    ]
+}

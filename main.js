@@ -2,7 +2,7 @@
 
 
 define('main', ['backtesting','graph'], function (backtesting, graph) {
-	backtesting.init();
+	//backtesting.init();
 	graph.init();
 
 	$(document).ready(function () {

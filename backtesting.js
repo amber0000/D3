@@ -4,9 +4,8 @@
 define('backtesting', ['Handsontable'], function (Handsontable) {
 	var backtesting = {};
 	backtesting.sheet = null;
-	console.log("a")
+	
 	backtesting.init = function () {
-		console.log("0000");
 		backtesting.initTable()
 	};
 
@@ -332,7 +331,6 @@ define('backtesting', ['Handsontable'], function (Handsontable) {
 	backtesting.toggleSideMenu = function() {
 		
 	}
-	console.log("backtesting.main");
 
 	return backtesting;
 });
