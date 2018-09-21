@@ -10,17 +10,18 @@
 	<style>
 body {
   margin: 0;
-  background-color: #2A2C39;
+  /* background-color: #2A2C39; */
   font-family: 'Yanone Kaffeesatz', sans-serif;
   font-weight: 200;
-  font-size: 17px;
+  /* font-size: 17px; */
 }
 #graphzone {
   width: 100vw;
   height: 100vh;
 }
 svg rect {
-  fill: #2A2C39;   /* map background colour */
+  /* fill: #2A2C39;    */
+  /* map background colour */
 }
 .country{
   fill: #d0d0d0;   /* country colour */
@@ -39,6 +40,18 @@ svg rect {
 .countryLabelBg{
   fill: #30BCED;   /* country label background colour */
 }	
+
+.area {
+  fill: steelblue;
+  clip-path: url(#clip);
+}
+
+.zoom {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
 	</style>
 </head>
 <body>
@@ -58,6 +71,7 @@ svg rect {
 			<div id="graphzone"></div>
 		</div>
 		<div class="col-md-6">
+				<svg width="960" height="500"></svg>
 			<div id="example"></div>
 		</div>
 		<div class="col-md-1">456</div>

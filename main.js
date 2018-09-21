@@ -1,10 +1,10 @@
 ﻿'use strict';
 
 
-define('main', ['backtesting','graph'], function (backtesting, graph) {
+define('main', ['backtesting','graph','candle'], function (backtesting, graph, candle) {
 	//backtesting.init();
-	graph.init();
-
+	//graph.init();
+	candle.init();
 	$(document).ready(function () {
 
 		$("#button01").click(function () {

@@ -23,9 +23,9 @@ define('graph', ['d3'], function (d3) {
         // graph.t16(); // Cluster, Pack & Bubble layouts - pack = d3.pack().size([w,h -50]), nodes = d3.hierarchy(data), nodes = pack(nodes), data(nodes.descendants())
         // graph.t17(); // Histogram Layout
         // graph.t18(); 
-        // graph.t18_01(); 
-        //graph.t19();
-        graph.t20();
+        // graph.t18_01(); treemap
+        // graph.t19(); // treemap
+         graph.t20(); // geo zoom 
     }
 
     graph.t01 = function() {
@@ -906,7 +906,7 @@ define('graph', ['d3'], function (d3) {
     }
 
     // ex (v4) - https://medium.com/@andybarefoot/making-a-map-using-d3-js-8aa3637304ee
-    // 
+    // svg getBBox - http://blog.xogus.io/2017/01/15/SVG%EC%97%90%EC%84%9C-getBBox-%ED%99%9C%EC%9A%A9%ED%95%98%EA%B8%B0/
     graph.t20 = async function() {
         let margin = {top: 40, right: 90, bottom: 50, left: 90},
         w = 3000 - margin.left - margin.right,
