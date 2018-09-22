@@ -6,7 +6,7 @@ define('candle', ['d3'], function (d3) {
     
     candle.init = function(){
         candle.t01();
-        //candle.t02();
+        candle.t02();
     }
 
     //http://nvd3-community.github.io/nvd3/examples/site.html
@@ -37,6 +37,9 @@ define('candle', ['d3'], function (d3) {
 
     // 가로 줌만 하게
     // https://stackoverflow.com/questions/39306515/horizontal-zoom-with-d3-version-4
+
+    // simple ex
+    // https://bl.ocks.org/rutgerhofste/5bd5b06f7817f0ff3ba1daa64dee629d
     candle.t01 = async function(){
         var margin = {top: 20, right: 20, bottom: 20, left: 40},
         width = 1000 - margin.left - margin.right,
@@ -51,7 +54,7 @@ define('candle', ['d3'], function (d3) {
         ////////////////////////////////////////////////
         // date open close heigh low volume
         //   0   1     2     3    4   5
-        let data = await d3.json("bitfinex_btcusd_1D.json");
+        let data = await d3.json("bitfinex_btcusd_6h.json");
 
         // InnerFunction
         ////////////////////////////////////////////////
@@ -62,19 +65,11 @@ define('candle', ['d3'], function (d3) {
 
         const yscale = d3.scaleLinear()
         .domain([minPrice, maxPrice])
-        .range([height - margin.top, margin.bottom])
-
-        const yscaleOrigin = d3.scaleLinear()
-        .domain([minPrice, maxPrice])
-        .range([height - margin.top, margin.bottom])        
+        .range([height - margin.top, margin.bottom])  
 
         var xscale = d3.scaleTime()
         .domain([new Date(minDate), new Date(maxDate)]) //범위를 날짜로
-        .range([margin.left+10, width + margin.left]); //위의 y축이 가로50을 차지했으니 그만큼 밀자        
-
-        var xscaleOrigin = d3.scaleTime()
-        .domain([new Date(minDate), new Date(maxDate)]) //범위를 날짜로
-        .range([margin.left+10, width + margin.left]); //위의 y축이 가로50을 차지했으니 그만큼 밀자            
+        .range([margin.left+10, width + margin.left]); //위의 y축이 가로50을 차지했으니 그만큼 밀자                
 
         const candleHeight = function(d){
             let heighPrice = d[3]
@@ -103,14 +98,16 @@ define('candle', ['d3'], function (d3) {
         
         let group = canvas.append("g") 
             //.attr("transform","translate(" + margin.left +"," + margin.top +")");
-            .attr("transform","translate(" + [-535, 0] + ")scale(" + 20 + ",1)");
-            //.attr("transform","scale(" + 30 + ",1)");
+            //.attr("transform","translate(" + [-535, 0] + ")scale(" + 50 + ",1)");
+            // group.attr("transform","scale(" + 3 + ",1)");
         // [1] 포지션은 height price에서 잡느다 좌표가 좌에서 우로, 위에서 아래로 증가 하기에
         var tick = group.selectAll("g")
             .data(data)
             .enter().append("g")
-
-
+        
+        var txt = tick.append("text")
+        var lines = tick.append('line')
+        var bar = tick.append("rect")
 
         let update = function(){
 
@@ -121,8 +118,12 @@ define('candle', ['d3'], function (d3) {
                 return "translate(" + xscale(d[0]) + "," + yscale(d[3]) + ")"; 
             })
 
+            txt
+                .text(function(d) {return d[3]})
+                .style("font-size", "8px")
+
             // [2] heightPrice(좌표) - minPrice (좌표) 해서 heightPrice 포지션에서 밑으로 그린다.
-            let lines = tick.append('line')
+            lines 
                 .attr('class', 'nv-candlestick-lines')
                 //.attr('transform', function(d, i) { return 'translate(' + xaxis(d[1]) + ',0)'; })
                 .attr('x1', 0)
@@ -142,11 +143,12 @@ define('candle', ['d3'], function (d3) {
                         return "green"
                     }
                 })
-                .attr("stroke-width", 1);
+                .attr("stroke-width", 1)
+                .call(getTextBox);
 
             // [3] 바는 시작포지션은 언제나 start 이다.
-            let bar = tick.append("rect")
-                .attr("x", -1)   
+            bar
+                .attr("x", 0)   
                 .attr("y", function(d,i){
                     let parentY = yscale(d[3])
                     let openY = yscale(d[1]) 
@@ -160,7 +162,7 @@ define('candle', ['d3'], function (d3) {
                     
                     return y
                 })
-                .attr("width", 3)
+                .attr("width", 0)
                 .attr("height", function(d,i) {
                     let start = d[1];
                     let close = d[2];
@@ -184,6 +186,7 @@ define('candle', ['d3'], function (d3) {
                         return "green"
                     }
                 });
+                
         }
 
         update();
@@ -191,7 +194,7 @@ define('candle', ['d3'], function (d3) {
         const xaxis = d3.axisBottom(xscale)
             .tickFormat(d3.timeFormat('%m/%d')) //표시할 형태를 포메팅한다.
             .ticks(d3.timeDay) //틱단위를 1일로
-            .ticks(20)
+            .ticks(15)
 
         const yaxis = d3.axisLeft(yscale)
         
@@ -205,57 +208,36 @@ define('candle', ['d3'], function (d3) {
 
         // Zoom
         ////////////////////////////////////////////////
-        // Create function to apply zoom to countriesGroup
         function zoomed() {
-            // console.log("minzom " + minZoom)
-            // console.log("maxzom " + maxZoom)
-            t = d3.event.transform;
+            let new_xScale = d3.event.transform.rescaleX(xscale)
+            let new_yScale = d3.event.transform.rescaleY(yscale)
 
-            console.log(t)
+            let minTime = new_xScale.domain()[0].getTime();
+            let maxTime = new_xScale.domain()[1].getTime();
 
-            group.attr("transform","translate(" + [t.x, 0] + ")scale(" + t.k + ",1)");
-            gX.call(xaxis.scale(d3.event.transform.rescaleX(xscale)));
-
-            var t = d3.event.transform;
-            var x2Domain = t.rescaleX(xscaleOrigin)
-            xscale.domain(x2Domain.domain());
-            
-            let minTime = x2Domain.domain()[0].getTime();
-            let maxTime = x2Domain.domain()[1].getTime();
-
-            let d = new Date().toUTCString
-            // console.log(typeof minTime);
-            // console.log(x2Domain.domain()[0].toISOString() +"," + x2Domain.domain()[1].toISOString())
-            let cData = []
+            let new_data = []
             data.map(function(d){
                 if(d[0] <= maxTime && d[0] >= minTime){
-                    cData.push(d)
+                    new_data.push(d)
                 }                
             })
 
-            let maxPrice = 0
-            let minPrice = 0
-
-            cData.map(function(d){
-                maxPrice = d3.max(cData.map(function(d){return d[3]}))
-                minPrice = d3.min(cData.map(function(d){return d[4]}))
-            })
-
-            console.log(cData.length + " " + minPrice + " , " + maxPrice)
+            let maxPrice = d3.max(new_data.map(function(d){return d[3]}));
+            let minPrice = d3.min(new_data.map(function(d){return d[4]}))
             yscale.domain([minPrice, maxPrice]);
-            gY.call(yaxis);
-            
-            
 
-            // tick.remove("g")
-            // tick = group.selectAll("g")
-            // .data(cData)
-            // .enter().append("g")
-            //tick.data(cData);
-            //tick.exit().remove();
-            //update();
+            // update axes
+            gX.call(xaxis.scale(new_xScale));
+            gY.call(yaxis.scale(yscale));
+
+            // update group
+            t = d3.event.transform;
+            group.attr("transform","translate(" + [t.x, 0] + ")scale(" + t.k + ",1)");
+
+            console.log("min : " + new_xScale.domain()[0].toISOString() +"(" + minPrice +")" + ",   max :" +  new_xScale.domain()[1].toISOString() +"(" + maxPrice +")")
+
+            update();
         }
-
         // Define map zoom behaviour
         var zoom = d3.zoom()
           .on("zoom", zoomed)
@@ -280,8 +262,7 @@ define('candle', ['d3'], function (d3) {
             canvas.call(zoom.transform, d3.zoomIdentity.translate(midX, midY).scale(minZoom));
         }          
 
-        canvas.call(zoom);
-        initiateZoom()
+        canvas.call(zoom);        
     }
 
     candle.t02 = async function(){
