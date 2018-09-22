@@ -6,7 +6,7 @@ define('candle', ['d3'], function (d3) {
     
     candle.init = function(){
         candle.t01();
-        candle.t02();
+        //candle.t02();
     }
 
     //http://nvd3-community.github.io/nvd3/examples/site.html
@@ -34,6 +34,9 @@ define('candle', ['d3'], function (d3) {
 
     // v2 rescale
     // http://bl.ocks.org/stepheneb/1182434
+
+    // 가로 줌만 하게
+    // https://stackoverflow.com/questions/39306515/horizontal-zoom-with-d3-version-4
     candle.t01 = async function(){
         var margin = {top: 20, right: 20, bottom: 20, left: 40},
         width = 1000 - margin.left - margin.right,
@@ -61,9 +64,17 @@ define('candle', ['d3'], function (d3) {
         .domain([minPrice, maxPrice])
         .range([height - margin.top, margin.bottom])
 
-        const xscale = d3.scaleTime()
+        const yscaleOrigin = d3.scaleLinear()
+        .domain([minPrice, maxPrice])
+        .range([height - margin.top, margin.bottom])        
+
+        var xscale = d3.scaleTime()
         .domain([new Date(minDate), new Date(maxDate)]) //범위를 날짜로
         .range([margin.left+10, width + margin.left]); //위의 y축이 가로50을 차지했으니 그만큼 밀자        
+
+        var xscaleOrigin = d3.scaleTime()
+        .domain([new Date(minDate), new Date(maxDate)]) //범위를 날짜로
+        .range([margin.left+10, width + margin.left]); //위의 y축이 가로50을 차지했으니 그만큼 밀자            
 
         const candleHeight = function(d){
             let heighPrice = d[3]
@@ -92,80 +103,90 @@ define('candle', ['d3'], function (d3) {
         
         let group = canvas.append("g") 
             //.attr("transform","translate(" + margin.left +"," + margin.top +")");
-
+            .attr("transform","translate(" + [-535, 0] + ")scale(" + 20 + ",1)");
+            //.attr("transform","scale(" + 30 + ",1)");
         // [1] 포지션은 height price에서 잡느다 좌표가 좌에서 우로, 위에서 아래로 증가 하기에
-        let tick = group.selectAll("g")
+        var tick = group.selectAll("g")
             .data(data)
             .enter().append("g")
+
+
+
+        let update = function(){
+
+            tick
             .attr("transform", function(d) { 
                 d.parent = {};
                 d.parent.y = yscale(d[3])
                 return "translate(" + xscale(d[0]) + "," + yscale(d[3]) + ")"; 
             })
 
-        // [2] heightPrice(좌표) - minPrice (좌표) 해서 heightPrice 포지션에서 밑으로 그린다.
-        let lines = tick.append('line')
-            .attr('class', 'nv-candlestick-lines')
-            //.attr('transform', function(d, i) { return 'translate(' + xaxis(d[1]) + ',0)'; })
-            .attr('x1', 0)
-            .attr('y1', function(d, i) {
-                 return 0; 
+            // [2] heightPrice(좌표) - minPrice (좌표) 해서 heightPrice 포지션에서 밑으로 그린다.
+            let lines = tick.append('line')
+                .attr('class', 'nv-candlestick-lines')
+                //.attr('transform', function(d, i) { return 'translate(' + xaxis(d[1]) + ',0)'; })
+                .attr('x1', 0)
+                .attr('y1', function(d, i) {
+                    return 0; 
+                    })
+                .attr('x2', 0)
+                .attr('y2', function(d, i) {
+                    return candleHeight(d);
+                    })
+                .attr("stroke", function(d,i){
+                    let start = d[1];
+                    let close = d[2];
+                    if(start > close){
+                        return "red"
+                    }else{
+                        return "green"
+                    }
                 })
-            .attr('x2', 0)
-            .attr('y2', function(d, i) {
-                 return candleHeight(d);
-                })
-            .attr("stroke", function(d,i){
-                let start = d[1];
-                let close = d[2];
-                if(start > close){
-                    return "red"
-                }else{
-                    return "green"
-                }
-            })
-            .attr("stroke-width", 1);
+                .attr("stroke-width", 1);
 
-        // [3] 바는 시작포지션은 언제나 start 이다.
-        let bar = tick.append("rect")
-            .attr("x", -1)   
-            .attr("y", function(d,i){
-                let parentY = yscale(d[3])
-                let openY = yscale(d[1]) 
-                let closeY = yscale(d[2])
-                let y = 0
-                if(closeY < openY){
-                    y = closeY - parentY;
-                } else{
-                    y = openY - parentY;
-                }
-                
-                return y
-            })
-            .attr("width", 3)
-            .attr("height", function(d,i) {
-                let start = d[1];
-                let close = d[2];
-                let startY = yscale(start) 
-                let closeY = yscale(close)
-                // 양봉
-                let height = 0;
-                if (closeY > startY) {
-                    height = closeY - startY
-                } else {
-                    height = startY - closeY
-                }
-                return height;
-            })
-            .attr("fill", function(d,i){
-                let start = d[1];
-                let close = d[2];
-                if(start > close){
-                    return "red";
-                }else{
-                    return "green"
-                }
-            });
+            // [3] 바는 시작포지션은 언제나 start 이다.
+            let bar = tick.append("rect")
+                .attr("x", -1)   
+                .attr("y", function(d,i){
+                    let parentY = yscale(d[3])
+                    let openY = yscale(d[1]) 
+                    let closeY = yscale(d[2])
+                    let y = 0
+                    if(closeY < openY){
+                        y = closeY - parentY;
+                    } else{
+                        y = openY - parentY;
+                    }
+                    
+                    return y
+                })
+                .attr("width", 3)
+                .attr("height", function(d,i) {
+                    let start = d[1];
+                    let close = d[2];
+                    let startY = yscale(start) 
+                    let closeY = yscale(close)
+                    // 양봉
+                    let height = 0;
+                    if (closeY > startY) {
+                        height = closeY - startY
+                    } else {
+                        height = startY - closeY
+                    }
+                    return height;
+                })
+                .attr("fill", function(d,i){
+                    let start = d[1];
+                    let close = d[2];
+                    if(start > close){
+                        return "red";
+                    }else{
+                        return "green"
+                    }
+                });
+        }
+
+        update();
 
         const xaxis = d3.axisBottom(xscale)
             .tickFormat(d3.timeFormat('%m/%d')) //표시할 형태를 포메팅한다.
@@ -174,7 +195,7 @@ define('candle', ['d3'], function (d3) {
 
         const yaxis = d3.axisLeft(yscale)
         
-        canvas.append("g")
+        let gY= canvas.append("g")
         .attr("transform", "translate("+margin.left+",0)")
         .call(yaxis);
         
@@ -186,11 +207,53 @@ define('candle', ['d3'], function (d3) {
         ////////////////////////////////////////////////
         // Create function to apply zoom to countriesGroup
         function zoomed() {
-            console.log("minzom " + minZoom)
-            console.log("maxzom " + maxZoom)
+            // console.log("minzom " + minZoom)
+            // console.log("maxzom " + maxZoom)
             t = d3.event.transform;
-            group.attr("transform","translate(" + [t.x, t.y] + ")scale(" + t.k + ")");
+
+            console.log(t)
+
+            group.attr("transform","translate(" + [t.x, 0] + ")scale(" + t.k + ",1)");
             gX.call(xaxis.scale(d3.event.transform.rescaleX(xscale)));
+
+            var t = d3.event.transform;
+            var x2Domain = t.rescaleX(xscaleOrigin)
+            xscale.domain(x2Domain.domain());
+            
+            let minTime = x2Domain.domain()[0].getTime();
+            let maxTime = x2Domain.domain()[1].getTime();
+
+            let d = new Date().toUTCString
+            // console.log(typeof minTime);
+            // console.log(x2Domain.domain()[0].toISOString() +"," + x2Domain.domain()[1].toISOString())
+            let cData = []
+            data.map(function(d){
+                if(d[0] <= maxTime && d[0] >= minTime){
+                    cData.push(d)
+                }                
+            })
+
+            let maxPrice = 0
+            let minPrice = 0
+
+            cData.map(function(d){
+                maxPrice = d3.max(cData.map(function(d){return d[3]}))
+                minPrice = d3.min(cData.map(function(d){return d[4]}))
+            })
+
+            console.log(cData.length + " " + minPrice + " , " + maxPrice)
+            yscale.domain([minPrice, maxPrice]);
+            gY.call(yaxis);
+            
+            
+
+            // tick.remove("g")
+            // tick = group.selectAll("g")
+            // .data(cData)
+            // .enter().append("g")
+            //tick.data(cData);
+            //tick.exit().remove();
+            //update();
         }
 
         // Define map zoom behaviour
@@ -218,7 +281,7 @@ define('candle', ['d3'], function (d3) {
         }          
 
         canvas.call(zoom);
-        //initiateZoom()
+        initiateZoom()
     }
 
     candle.t02 = async function(){
