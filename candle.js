@@ -54,7 +54,28 @@ define('candle', ['d3'], function (d3) {
         ////////////////////////////////////////////////
         // date open close heigh low volume
         //   0   1     2     3    4   5
-        let data = await d3.json("bitfinex_btcusd_6h.json");
+        let initData = await d3.json("bitfinex_btcusd_1D.json");
+        let data; 
+        const iDate = 1530785032258;
+                
+        let setData = function(minDate){
+            data = initData.reduce(function(acc, cur){
+                if(minDate <= cur[0]) acc.push(cur)
+                return acc;
+            }, []);
+            console.log("setData " + data.length)
+        }
+        setData(iDate)
+        
+        /*
+            initData로 일단 Data를 잘라주고/
+
+            Data의 minDate 와 MaxDate를 기록 해 놓고
+            zoom 시 도메인 데이터가 minData 보다 작을때 데이터를 더 가지고 온다.
+
+        */
+        // let data = await d3.json("bitfinex_btcusd_6h.json");
+        //let data = await d3.json("bitfinex_btcusd_1h.json");
 
         // InnerFunction
         ////////////////////////////////////////////////
@@ -77,14 +98,7 @@ define('candle', ['d3'], function (d3) {
             let maxY = yscale(heighPrice);
             let minY = yscale(lowPrice);
             return (minY-maxY)
-        }
-
-        function getTextBox(selection) {
-            selection.each(function(d) {
-                d.bbox = this.getBoundingClientRect();
-                })
-            ;
-          }        
+        }   
      
         // Test
         /////////////////////////////////////////////////
@@ -101,26 +115,35 @@ define('candle', ['d3'], function (d3) {
             //.attr("transform","translate(" + [-535, 0] + ")scale(" + 50 + ",1)");
             // group.attr("transform","scale(" + 3 + ",1)");
         // [1] 포지션은 height price에서 잡느다 좌표가 좌에서 우로, 위에서 아래로 증가 하기에
-        var tick = group.selectAll("g")
+        var tick
+        var txt
+        var lines
+        var bar
+
+        let enter = function(){
+            tick = group.selectAll("g")
             .data(data)
             .enter().append("g")
-        
-        var txt = tick.append("text")
-        var lines = tick.append('line')
-        var bar = tick.append("rect")
+
+            txt = tick.append("text")
+            lines = tick.append('line')
+            bar = tick.append("rect")
+        }
 
         let update = function(){
+            console.log(tick)
 
-            tick
-            .attr("transform", function(d) { 
+            tick = group.selectAll("g")
+             console.log(tick._groups[0].length)
+            tick.attr("transform", function(d) { 
                 d.parent = {};
                 d.parent.y = yscale(d[3])
                 return "translate(" + xscale(d[0]) + "," + yscale(d[3]) + ")"; 
             })
 
             txt
-                .text(function(d) {return d[3]})
-                .style("font-size", "8px")
+                .text(function(d) {return d[4]})
+                .style("font-size", "15px")
 
             // [2] heightPrice(좌표) - minPrice (좌표) 해서 heightPrice 포지션에서 밑으로 그린다.
             lines 
@@ -143,8 +166,7 @@ define('candle', ['d3'], function (d3) {
                         return "green"
                     }
                 })
-                .attr("stroke-width", 1)
-                .call(getTextBox);
+                .attr("stroke-width", 2)
 
             // [3] 바는 시작포지션은 언제나 start 이다.
             bar
@@ -189,12 +211,16 @@ define('candle', ['d3'], function (d3) {
                 
         }
 
+        // 초기화
+        enter();
         update();
 
         const xaxis = d3.axisBottom(xscale)
             .tickFormat(d3.timeFormat('%m/%d')) //표시할 형태를 포메팅한다.
-            .ticks(d3.timeDay) //틱단위를 1일로
-            .ticks(15)
+            //.ticks(d3.timeDay) //틱단위를 1일로
+            .ticks(d3.timeMinute.every(240))
+            .ticks(30)
+
 
         const yaxis = d3.axisLeft(yscale)
         
@@ -215,6 +241,13 @@ define('candle', ['d3'], function (d3) {
             let minTime = new_xScale.domain()[0].getTime();
             let maxTime = new_xScale.domain()[1].getTime();
 
+            let flag = false
+            if(minDate > minTime){
+                setData(minTime);
+                minDate = minTime
+                
+            }
+
             let new_data = []
             data.map(function(d){
                 if(d[0] <= maxTime && d[0] >= minTime){
@@ -234,9 +267,15 @@ define('candle', ['d3'], function (d3) {
             t = d3.event.transform;
             group.attr("transform","translate(" + [t.x, 0] + ")scale(" + t.k + ",1)");
 
-            console.log("min : " + new_xScale.domain()[0].toISOString() +"(" + minPrice +")" + ",   max :" +  new_xScale.domain()[1].toISOString() +"(" + maxPrice +")")
-
+            console.log("min : " + new_xScale.domain()[0].toISOString() +"(" + minPrice +") - " + Number(new_xScale.domain()[0]) + ",   max :" +  new_xScale.domain()[1].toISOString() +"(" + maxPrice +")")
+            
+            //enter();
             update();
+        }
+
+        function zoomed2(){
+            t = d3.event.transform;
+            group.attr("transform","translate(" + [t.x, 0] + ")scale(" + t.k + ",1)");
         }
         // Define map zoom behaviour
         var zoom = d3.zoom()
