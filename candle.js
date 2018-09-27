@@ -46,6 +46,11 @@ define('candle', ['d3'], function (d3) {
 
     // zoom pan 초기화 문제
     // https://stackoverflow.com/questions/39688256/force-layout-zoom-resets-on-first-tick-of-dragging-or-zomming
+
+    // zoom pan 구분
+    // https://bl.ocks.org/catherinekerr/b3227f16cebc8dd8beee461a945fb323
+    // d3.event.defaultPrevented
+    
     candle.t01 = async function(){
         var margin = {top: 20, right: 20, bottom: 20, left: 40},
         width = 1000 - margin.left - margin.right,
